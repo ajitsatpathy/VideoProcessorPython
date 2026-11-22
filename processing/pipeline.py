@@ -100,6 +100,10 @@ class VideoPipeline:
                 if blur_enabled and plate_detector:
                     frame = plate_detector.blur_plates(frame)
 
+                # Ensure frame matches output dimensions
+                if frame.shape[1] != width or frame.shape[0] != height:
+                    frame = cv2.resize(frame, (width, height))
+
                 # Write frame
                 out.write(frame)
 
@@ -134,11 +138,18 @@ class VideoPipeline:
             )
             if success and temp_output.exists():
                 os.remove(temp_output)
+            elif not success:
+                self._log("Warning: Audio mixing failed. Preserving video without background music.")
+                if final_output.exists():
+                    os.remove(final_output)
+                if temp_output.exists():
+                    os.rename(temp_output, final_output)
         else:
             self._log("No valid music path provided. Renaming temp file to final output.")
             if final_output.exists():
                 os.remove(final_output)
-            os.rename(temp_output, final_output)
+            if temp_output.exists():
+                os.rename(temp_output, final_output)
 
         self._log("Processing completed successfully.")
         return True

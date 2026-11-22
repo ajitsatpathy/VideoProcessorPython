@@ -26,8 +26,12 @@ class ProcessingWorker(QThread):
         )
 
     def run(self):
-        success = self.pipeline.run()
-        self.finished_signal.emit(success)
+        try:
+            success = self.pipeline.run()
+            self.finished_signal.emit(success)
+        except Exception as e:
+            self.log_signal.emit(f"Error during processing: {e}")
+            self.finished_signal.emit(False)
 
     def cancel(self):
         if self.pipeline:

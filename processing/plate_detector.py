@@ -1,5 +1,12 @@
 import cv2
 import os
+
+try:
+    import truststore
+    truststore.inject_into_ssl()
+except ImportError:
+    pass
+
 try:
     from ultralytics import YOLO
     HAS_YOLO = True
@@ -27,10 +34,15 @@ class PlateDetector:
 
         if not self.use_yolo:
             # Fallback to OpenCV Haar Cascade for Russian plates (commonly works as a generic plate detector)
-            cascade_path = cv2.data.haarcascades + "haarcascade_russian_plate_number.xml"
-            self.cascade = cv2.CascadeClassifier(cascade_path)
-            if self.cascade.empty():
-                logger.error("Failed to load Haar Cascade for plate detection.")
+            if hasattr(cv2, "CascadeClassifier") and hasattr(cv2, "data") and hasattr(cv2.data, "haarcascades"):
+                cascade_path = cv2.data.haarcascades + "haarcascade_russian_plate_number.xml"
+                self.cascade = cv2.CascadeClassifier(cascade_path)
+                if self.cascade.empty():
+                    logger.error("Failed to load Haar Cascade for plate detection.")
+                    self.cascade = None
+            else:
+                logger.warning("cv2.CascadeClassifier is not available in the installed OpenCV version. Plate blurring will be bypassed.")
+                self.cascade = None
 
     def blur_plates(self, frame):
         """

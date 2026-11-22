@@ -21,10 +21,20 @@ A professional desktop application for processing dashcam videos. Merges multipl
 
 ## Usage
 
-1. Run the application:
+1. Run the application either from the built executable or
+   directly with Python via the virtual environment:
+
+  Option 1: Run the Built Executable
    ```bash
-   python main.py
+   .\dist\VideoProcessor\VideoProcessor.exe 
    ```
+
+  Option 2: Run via Python in the Virtual Environment
+   ```bash
+   1 .\.venv\Scripts\Activate.ps1
+   2 python main.py
+  (Or directly in one command without activating:
+  ```
 2. Select your Input directory containing the dashcam videos.
 3. Configure your output settings (speed, music, thresholds).
 4. Click **Start Processing**.
