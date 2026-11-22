@@ -1,0 +1,12 @@
+{
+    "input_dir": "C:/workspacepython/Videos",
+    "output_dir": "output",
+    "output_filename": "Timelapse_output",
+    "speed_multiplier": 3.0,
+    "music_path": "C:/workspacepython/Audios/Track2.mp3",
+    "music_volume": 0.5,
+    "min_stationary_seconds": 3.0,
+    "motion_threshold": 150000,
+    "blur_plates": true,
+    "enable_gpu": true
+}
