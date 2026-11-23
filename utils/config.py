@@ -3,8 +3,8 @@ import os
 from pathlib import Path
 
 class Config:
-    def __init__(self):
-        self.config_path = Path("config.json")
+    def __init__(self, config_path="config.json"):
+        self.config_path = Path(config_path)
         self.settings = {
             "input_dir": "",
             "output_dir": "output",
@@ -38,8 +38,9 @@ class Config:
     def get(self, key, default=None):
         return self.settings.get(key, default)
 
-    def set(self, key, value):
+    def set(self, key, value, auto_save=False):
         self.settings[key] = value
-        self.save()
+        if auto_save:
+            self.save()
 
 app_config = Config()
