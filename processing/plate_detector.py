@@ -24,7 +24,10 @@ REMOTE_PLATE_MODEL_URL = (
 )
 
 class PlateDetector:
-    def __init__(self, model_path=None):
+
+    def __init__(self, model_path=None, enabled=True):
+        self.enabled = bool(enabled)
+        self.model_path = model_path
         self.use_yolo = False
         self.model = None
         self.is_plate_model = False
@@ -32,7 +35,18 @@ class PlateDetector:
         self.vehicle_classes = []
         self.cascade = None
 
-        resolved_model_path = self._resolve_model_path(model_path)
+        if self.enabled:
+            self.load_model(model_path)
+        else:
+            logger.info("License plate blurring is disabled; model will not be loaded.")
+
+    def load_model(self, model_path=None):
+        """
+        Loads the plate detection model (YOLO license plate / vehicle detector, or Haar Cascade fallback).
+        Only executed if license plate blurring is enabled.
+        """
+        path_to_resolve = model_path if model_path is not None else self.model_path
+        resolved_model_path = self._resolve_model_path(path_to_resolve)
 
         if HAS_YOLO and resolved_model_path:
             try:
@@ -141,7 +155,11 @@ class PlateDetector:
         """
         Detects and blurs only license plates in the given frame.
         Ensures the complete vehicle is never blurred.
+        Bypasses processing if blurring is disabled.
         """
+        if not self.enabled:
+            return frame
+
         if frame is None or not isinstance(frame, np.ndarray) or frame.size == 0:
             return frame
 

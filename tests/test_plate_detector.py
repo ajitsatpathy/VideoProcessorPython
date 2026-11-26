@@ -133,5 +133,28 @@ class TestPlateDetector(unittest.TestCase):
         processed = detector.blur_plates(frame)
         self.assertEqual(processed.shape, (100, 100, 3))
 
+    def test_disabled_plate_detector_does_not_load_model(self):
+        with patch.object(PlateDetector, "_resolve_model_path") as mock_resolve:
+            detector = PlateDetector(enabled=False)
+            self.assertFalse(detector.enabled)
+            self.assertIsNone(detector.model)
+            self.assertFalse(detector.use_yolo)
+            self.assertIsNone(detector.cascade)
+            mock_resolve.assert_not_called()
+
+        # Frame should be returned untouched without attempting detection
+        frame = np.ones((50, 50, 3), dtype=np.uint8) * 200
+        result = detector.blur_plates(frame)
+        self.assertTrue(np.array_equal(frame, result))
+
+    def test_disabled_plate_detector_load_model_explicitly(self):
+        detector = PlateDetector(enabled=False)
+        self.assertIsNone(detector.model)
+        self.assertFalse(detector.use_yolo)
+
+        detector.load_model("models/yolo/yolov8n.pt")
+        self.assertTrue(detector.use_yolo)
+        self.assertIsNotNone(detector.model)
+
 if __name__ == "__main__":
     unittest.main()

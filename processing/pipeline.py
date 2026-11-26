@@ -13,6 +13,7 @@ class VideoPipeline:
         self.log_callback = log_callback
         self.frame_callback = frame_callback
         self.is_cancelled = False
+        self.plate_detector = None
 
     def _log(self, message):
         logger.info(message)
@@ -28,7 +29,7 @@ class VideoPipeline:
         output_dir.mkdir(exist_ok=True)
         
         speed = self.config.get("speed_multiplier", 4.0)
-        blur_enabled = self.config.get("blur_plates", True)
+        blur_enabled = bool(self.config.get("blur_plates", True))
         music_path = self.config.get("music_path", "")
         
         valid_exts = ['.mp4', '.mov', '.avi', '.mkv']
@@ -43,8 +44,22 @@ class VideoPipeline:
         temp_output = output_dir / "temp_merged.mp4"
         final_output = output_dir / f"{self.config.get('output_filename', 'Timelapse')}.mp4"
 
-        # Initialize components
-        plate_detector = PlateDetector() if blur_enabled else None
+        # Model loading logic:
+        # If "Enable License Plate Blurring" is checked, then only load the model. Else do not load the model.
+        if blur_enabled:
+            self._log("License plate blurring is enabled. Loading plate detection model...")
+            self.plate_detector = PlateDetector(enabled=True)
+            if self.plate_detector.use_yolo and self.plate_detector.model:
+                self._log("License plate detection model loaded successfully.")
+            elif self.plate_detector.cascade:
+                self._log("Haar Cascade plate detection model loaded as fallback.")
+            else:
+                self._log("Warning: License plate detection model could not be loaded.")
+        else:
+            self._log("License plate blurring is disabled. Skipping model loading.")
+            self.plate_detector = None
+
+        plate_detector = self.plate_detector
         
         # Read first video to get properties
         cap = cv2.VideoCapture(str(videos[0]))

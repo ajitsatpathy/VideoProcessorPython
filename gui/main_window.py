@@ -15,8 +15,8 @@ class ProcessingWorker(QThread):
     preview_signal = Signal(np.ndarray)
     finished_signal = Signal(bool)
 
-    def __init__(self, config):
-        super().__init__()
+    def __init__(self, config, parent=None):
+        super().__init__(parent)
         self.config = config
         self.pipeline = VideoPipeline(
             config,
@@ -130,6 +130,16 @@ class MainWindow(QMainWindow):
             self.append_log("Error: Please select an input directory.")
             return
 
+        # Clean up any existing worker thread before launching a new one
+        if self.worker is not None:
+            try:
+                if hasattr(self.worker, "isRunning") and self.worker.isRunning():
+                    self.worker.cancel()
+                    self.worker.wait(3000)
+            except Exception:
+                pass
+            self.worker = None
+
         # Update config from UI
         app_config.set("speed_multiplier", self.spin_speed.value())
         app_config.set("blur_plates", self.chk_blur.isChecked())
@@ -139,7 +149,7 @@ class MainWindow(QMainWindow):
         self.txt_logs.clear()
         self.progress_bar.setValue(0)
 
-        self.worker = ProcessingWorker(app_config)
+        self.worker = ProcessingWorker(app_config, parent=self)
         self.worker.progress_signal.connect(self.progress_bar.setValue)
         self.worker.log_signal.connect(self.append_log)
         self.worker.preview_signal.connect(self.update_preview)
@@ -155,12 +165,34 @@ class MainWindow(QMainWindow):
     def processing_finished(self, success):
         self.btn_start.setEnabled(True)
         self.btn_cancel.setEnabled(False)
-        self.worker = None
+
+        # Wait for worker thread to completely exit run() before clearing reference
+        if self.worker is not None:
+            try:
+                if hasattr(self.worker, "wait"):
+                    self.worker.wait(5000)
+            except Exception:
+                pass
+            self.worker = None
+
         if success:
             self.append_log("Workflow finished successfully.")
             self.progress_bar.setValue(100)
         else:
             self.append_log("Workflow failed or was cancelled.")
+
+    def closeEvent(self, event):
+        if self.worker is not None:
+            try:
+                if hasattr(self.worker, "isRunning") and self.worker.isRunning():
+                    self.worker.cancel()
+                    if not self.worker.wait(3000):
+                        self.worker.terminate()
+                        self.worker.wait(1000)
+            except Exception:
+                pass
+            self.worker = None
+        event.accept()
 
     def append_log(self, text):
         self.txt_logs.append(text)
