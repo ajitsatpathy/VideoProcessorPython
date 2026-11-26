@@ -40,5 +40,5 @@ A professional desktop application for processing dashcam videos. Merges multipl
 4. Click **Start Processing**.
 
 ## Notes
-- First run will automatically download standard YOLOv8 weights to the `models/yolo` directory.
-- The plate blur utilizes OpenCV's built-in cascades. For higher accuracy, place a custom YOLO plate detection model at `models/yolo/plate.pt`.
+- First run will automatically download standard YOLOv8 weights and dedicated license plate detection weights (`license_plate_detector.pt`) to the `models/yolo` directory.
+- License plate blurring isolates and blurs only number plates without blurring the complete vehicle. You can also place custom fine-tuned weights at `models/yolo/license_plate_detector.pt` or `models/yolo/plate.pt`.
